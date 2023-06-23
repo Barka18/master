@@ -280,7 +280,7 @@ INSERT INTO `teacher` (`tid`, `fname`, `lname`, `address`, `contact`, `bday`, `s
 CREATE TABLE `user` (
   `role` varchar(50) NOT NULL,
   `email` varchar(50) NOT NULL,
-  `password` varchar(50) NOT NULL
+  `password` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
