@@ -63,54 +63,63 @@ include_once 'database.php';
       </div>
     </form>
 
-    <?php
-
-    if (isset($_POST['submit'])) {
-      $email = $_POST['email'];
-      $password = $_POST['password'];
-
-      $sql = "SELECT * FROM user WHERE email ='".$email."' and password = '".$password."' ";
-                  $result = $conn->query($sql);
-
-                  if ($result->num_rows > 0) {
-                   // output data of each row
-                     while($row = $result->fetch_assoc()) {
-                      $_SESSION['role'] = $row['role'];
-                       
-
-                      //$_SESSION['user'] = $row['fname']." ".$row['lname'];
-
-
-
-
-
-
-                      
-                       }
-
-                       $sql2 = "SELECT * FROM ".$_SESSION['role']." WHERE email ='".$email."'";
-                        $result2 = $conn->query($sql2);
-                        if ($result2->num_rows > 0) {
-                            while($row2 = $result2->fetch_assoc()) {
-                              $_SESSION['user'] = $row2['fname']." ".$row2['lname'];
-                              //$_SESSION['uid'] = $row2['pid'];
-                              if($_SESSION['role']=='Student'){
-                                $_SESSION['uid']=$row2['sid'];
-                              }else if($_SESSION['role']=='Parent'){
-                                $_SESSION['uid']=$row2['pid'];
-                              }else if($_SESSION['role']=='Teacher'){
-                                $_SESSION['uid']=$row2['tid'];
-                              }
-                            }
-
-                        }
-
-                        header("Location:./");
-                                  }else{echo "<p style='width:100%;text-align;center'>Incorrect username or password</p>";}
-    }
-
-    ?>
-
+      <?php
+      
+      if (isset($_POST['submit'])) {
+          $email = $_POST['email'];
+          $password = $_POST['password'];
+      
+          // Used prepared statement to prevent SQL injection attacks
+          $stmt = $conn->prepare("SELECT * FROM user WHERE email = ? AND password = ?");
+          $stmt->bind_param("ss", $email, $password);
+          $stmt->execute();
+          $result = $stmt->get_result();
+      
+          if ($result->num_rows > 0) {
+              // If the query was successful, output data of each row
+              while ($row = $result->fetch_assoc()) {
+                  $_SESSION['role'] = $row['role'];
+              }
+      
+              $sql2 = "SELECT * FROM " . $_SESSION['role'] . " WHERE email = ?";
+              $stmt2 = $conn->prepare($sql2);
+              if ($stmt2 === false) {
+                die("Error: " . $conn->error);
+              }
+              $stmt2->bind_param("s", $email);
+              $stmt2->execute();
+              $result2 = $stmt2->get_result();
+      
+              if ($result2) {
+                  // If the query was successful
+                  if ($result2->num_rows > 0) {
+                      // If there is at least one row in the result set
+                      while ($row2 = $result2->fetch_assoc()) {
+                          $_SESSION['user'] = $row2['fname'] . " " . $row2['lname'];
+                          if ($_SESSION['role'] == 'Student') {
+                              $_SESSION['uid'] = $row2['sid'];
+                          } else if ($_SESSION['role'] == 'Parent') {
+                              $_SESSION['uid'] = $row2['pid'];
+                          } else if ($_SESSION['role'] == 'Teacher') {
+                              $_SESSION['uid'] = $row2['tid'];
+                          }
+                      }
+                  } else {
+                      // If there are no rows in the result set
+                      echo "No results found";
+                  }
+              } else {
+                  // If the query failed
+                  echo "Error: connection failed" . $conn->error;
+              }
+      
+              header("Location: index.php");
+          } else {
+              echo "<p style='width:100%;text-align:center'>Incorrect user ID or password</p>";
+          }
+      }
+      
+      ?>
    
     <!-- /.social-auth-links -->
 
